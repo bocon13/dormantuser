@@ -25,7 +25,6 @@
                         <manifestEntries>
                             <Gerrit-PluginName>inactiveuser</Gerrit-PluginName>
                             <Gerrit-Module>com.googlesource.gerrit.plugins.inactiveuser.Module</Gerrit-Module>
-                            <Gerrit-HttpModule>com.googlesource.gerrit.plugins.inactiveuser.HttpModule</Gerrit-HttpModule>
                             <Gerrit-SshModule>com.googlesource.gerrit.plugins.inactiveuser.SshModule</Gerrit-SshModule>
 
                             <Implementation-Vendor>Gerrit Code Review</Implementation-Vendor>
