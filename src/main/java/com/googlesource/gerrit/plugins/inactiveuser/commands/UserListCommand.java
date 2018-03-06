@@ -1,4 +1,4 @@
-package com.googlesource.gerrit.plugins.inactiveuser;
+package com.googlesource.gerrit.plugins.inactiveuser.commands;
 
 import com.google.common.base.Strings;
 import com.google.gerrit.common.data.GlobalCapability;
@@ -7,6 +7,7 @@ import com.google.gerrit.reviewdb.client.Account;
 import com.google.gerrit.sshd.CommandMetaData;
 import com.google.gerrit.sshd.SshCommand;
 import com.google.inject.Inject;
+import com.googlesource.gerrit.plugins.inactiveuser.AccountActivity;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
