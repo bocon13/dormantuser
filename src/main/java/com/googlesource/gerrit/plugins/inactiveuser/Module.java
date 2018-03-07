@@ -12,7 +12,10 @@ public class Module extends FactoryModule {
         // Register the lifecycle listener
         // Note: It is required to register is manually to avoid duplicate calls to start()/stop() per:
         //       https://bugs.chromium.org/p/gerrit/issues/detail?id=2106
-        DynamicSet.bind(binder(), LifecycleListener.class).to(AccountActivity.class);
+        DynamicSet.bind(binder(), LifecycleListener.class).to(AccountActivityImpl.class);
+
+        // Register the account activity implementation
+        DynamicSet.bind(binder(), AccountActivity.class).to(AccountActivityImpl.class);
 
         // Register the audit event listener
         DynamicSet.bind(binder(), AuditListener.class).to(UserAuditListener.class);
