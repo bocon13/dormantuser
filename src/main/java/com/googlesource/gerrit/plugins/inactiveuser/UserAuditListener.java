@@ -23,11 +23,11 @@ public class UserAuditListener implements AuditListener {
 
     @Override
     public void onAuditableAction(AuditEvent action) {
-        log.error("audit event: " + action.toString());
+        log.trace("audit event: {}", action.toString());
         CurrentUser user = action.who;
         if (user != null && user.isIdentifiedUser()) {
             Account.Id id = user.getAccountId();
-            log.info("audit event for user: {}", id);
+            log.trace("audit event for user: {}", id);
             accountActivity.markActive(id);
         }
     }

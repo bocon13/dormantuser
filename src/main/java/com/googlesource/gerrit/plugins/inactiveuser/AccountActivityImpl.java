@@ -23,10 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -38,13 +36,10 @@ import java.util.concurrent.TimeUnit;
 public class AccountActivityImpl implements AccountActivity, LifecycleListener {
     private static final String ACTIVITY_SECTION = "activity";
     private static final String ACTIVITY_NAME = "lastActivity";
-    private static final String STATUS_EMPTY = "";
-    private static final String STATUS_INACTIVE = "inactive";
-    private static final TemporalAmount INACTIVE_PERIOD = Duration.ofMinutes(1);
-    private static final TemporalAmount POLLING_PERIOD = Duration.ofSeconds(10);
 
     private final Logger log = LoggerFactory.getLogger(AccountActivityImpl.class);
 
+    private final InactiveUserConfig config;
     private final SchemaFactory<ReviewDb> schemaFactory;
     private final WorkQueue workQueue;
     private final AllUsersName allUsersName;
@@ -57,13 +52,14 @@ public class AccountActivityImpl implements AccountActivity, LifecycleListener {
     private ScheduledFuture periodicFuture = null;
 
     @Inject
-    AccountActivityImpl(SchemaFactory<ReviewDb> schemaFactory,
+    AccountActivityImpl(InactiveUserConfig config,
+                        SchemaFactory<ReviewDb> schemaFactory,
                         WorkQueue workQueue,
                         AllUsersName allUsersName,
                         Provider<MetaDataUpdate.User> metaDataUpdateFactory,
                         AccountCache byIdCache,
                         IdentifiedUser.GenericFactory identifiedUserFactory) {
-        log.info("contructing acountactivity");
+        this.config = config;
         this.schemaFactory = schemaFactory;
         this.workQueue = workQueue;
         this.allUsersName = allUsersName;
@@ -76,7 +72,7 @@ public class AccountActivityImpl implements AccountActivity, LifecycleListener {
     public void start() {
         if (executor == null) {
             executor = workQueue.createQueue(1, "InactiveUser");
-            long delay = POLLING_PERIOD.get(ChronoUnit.SECONDS);
+            long delay = config.getPollingPeriod().get(ChronoUnit.SECONDS);
             periodicFuture = executor.scheduleAtFixedRate(this::updateAllUsers, delay, delay, TimeUnit.SECONDS);
         }
         log.debug("Started");
@@ -104,6 +100,7 @@ public class AccountActivityImpl implements AccountActivity, LifecycleListener {
     }
 
     // ----------- Public / "interface" methods --------------------
+    @Override
     public void markActive(Account.Id id) {
         log.debug("Marking user active: {}", id);
         updateMap.put(id, Instant.now());
@@ -113,6 +110,13 @@ public class AccountActivityImpl implements AccountActivity, LifecycleListener {
         }
     }
 
+    @Override
+    public boolean isActive(Account.Id id) {
+        //FIXME this may be slightly out of date
+        return config.getInactiveUserStatus().equals(byIdCache.get(id).getAccount().getStatus());
+    }
+
+    @Override
     public List<TimestampedAccount> allUsers() {
         List<TimestampedAccount> users = updateAllUsers(true);
         users.sort(Comparator.comparing(TimestampedAccount::getTimestamp).reversed());
@@ -121,18 +125,18 @@ public class AccountActivityImpl implements AccountActivity, LifecycleListener {
 
     // ----------- Private / implementation methods --------------------
     private void activateUser(Account account) {
-        if (account != null && STATUS_INACTIVE.equals(account.getStatus())) {
+        if (account != null && config.getInactiveUserStatus().equals(account.getStatus())) {
             // Clear the user's inactive status
-            updateStatus(account.getId(), STATUS_EMPTY);
-            log.info("Active user: {} ({})", account.getFullName(), account.getId());
+            updateStatus(account.getId(), config.getDefaultUserStatus());
+            log.debug("Active user: {} ({})", account.getFullName(), account.getId());
         }
     }
 
     private void deactivateUser(Account account) {
-        if (account != null && !STATUS_INACTIVE.equals(account.getStatus())) {
+        if (account != null && !config.getInactiveUserStatus().equals(account.getStatus())) {
             // Set the user's status to inactive
-            updateStatus(account.getId(), STATUS_INACTIVE);
-            log.info("Inactive user: {} ({})", account.getFullName(), account.getId());
+            updateStatus(account.getId(), config.getInactiveUserStatus());
+            log.debug("Inactive user: {} ({})", account.getFullName(), account.getId());
         }
     }
 
@@ -191,7 +195,9 @@ public class AccountActivityImpl implements AccountActivity, LifecycleListener {
         log.trace("{} was last active at {}", a.getFullName(), lastUpdate);
         if (lastUpdate.isBefore(inactiveWindow) &&
                 // check if the user registered within the inactivity window
-                a.getRegisteredOn().toInstant().isBefore(inactiveWindow)) {
+                a.getRegisteredOn().toInstant().isBefore(inactiveWindow) &&
+                // compare against the epoch (when the plugin was first installed)
+                config.getEpoch().isBefore(inactiveWindow)) {
             deactivateUser(a);
         } else {
             //This should always be a no-op because it is done immediately
@@ -206,7 +212,7 @@ public class AccountActivityImpl implements AccountActivity, LifecycleListener {
 
     private List<TimestampedAccount> updateAllUsers(boolean withReturn) {
         List<TimestampedAccount> users = withReturn ? Lists.newArrayList() : null;
-        Instant inactiveWindow = Instant.now().minus(INACTIVE_PERIOD);
+        Instant inactiveWindow = Instant.now().minus(config.getInactivePeriod());
         try {
             log.trace("Updating all users...");
             try (ReviewDb db = schemaFactory.open()) {
