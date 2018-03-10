@@ -1,4 +1,4 @@
-package com.googlesource.gerrit.plugins.inactiveuser;
+package com.googlesource.gerrit.plugins.dormantuser;
 
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.server.config.PluginConfig;
@@ -21,38 +21,38 @@ import java.time.temporal.TemporalAmount;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Singleton
-public class InactiveUserConfig {
-    private static final String CONFIG_STATUS_INACTIVE = "statusInactive";
+public class DormantUserConfig {
+    private static final String CONFIG_STATUS_DORMANT = "statusDormant";
     private static final String CONFIG_STATUS_DEFAULT = "statusDefault";
-    private static final String CONFIG_PERIOD_INACTIVE = "periodInactive";
+    private static final String CONFIG_PERIOD_DORMANT = "periodDormant";
     private static final String CONFIG_PERIOD_POLLING = "periodPolling";
     private static final String CONFIG_EPOCH = "epoch";
 
 
     private static final String DEFAULT_STATUS_EMPTY = "";
-    private static final String DEFAULT_STATUS_INACTIVE = "inactive";
-    private static final TemporalAmount DEFAULT_INACTIVE_PERIOD = Duration.ofDays(60); // 2 months
+    private static final String DEFAULT_STATUS_DORMANT = "dormant";
+    private static final TemporalAmount DEFAULT_DORMANT_PERIOD = Duration.ofDays(60); // 2 months
     private static final TemporalAmount DEFAULT_POLLING_PERIOD = Duration.ofHours(1);
 
-    private final String statusInactive;
+    private final String statusDormant;
     private final String statusDefault;
-    private final TemporalAmount inactivePeriod;
+    private final TemporalAmount dormantPeriod;
     private final TemporalAmount pollingPeriod;
     private final Instant epoch;
 
-    private final Logger log = LoggerFactory.getLogger(InactiveUserConfig.class);
+    private final Logger log = LoggerFactory.getLogger(DormantUserConfig.class);
 
     @Inject
-    public InactiveUserConfig(@PluginName String pluginName,
-                              SitePaths sitePaths) {
+    public DormantUserConfig(@PluginName String pluginName,
+                             SitePaths sitePaths) {
         File configFile = sitePaths.gerrit_config.toFile();
-        String statusInactive = null, statusDefault = null;
-        TemporalAmount inactivePeriod = null, pollingPeriod = null;
+        String statusDormant = null, statusDefault = null;
+        TemporalAmount dormantPeriod = null, pollingPeriod = null;
         Instant epoch = null;
         try (EditablePluginConfig config = EditablePluginConfig.fromFile(pluginName, configFile)) {
-            statusInactive = config.getString(CONFIG_STATUS_INACTIVE);
+            statusDormant = config.getString(CONFIG_STATUS_DORMANT);
             statusDefault = config.getString(CONFIG_STATUS_DEFAULT);
-            inactivePeriod = config.getDuration(CONFIG_PERIOD_INACTIVE);
+            dormantPeriod = config.getDuration(CONFIG_PERIOD_DORMANT);
             pollingPeriod = config.getDuration(CONFIG_PERIOD_POLLING);
             epoch = getOrNow(config, CONFIG_EPOCH, true);
         } catch (ConfigInvalidException e) {
@@ -61,20 +61,20 @@ public class InactiveUserConfig {
             e.printStackTrace(); //FIXME
         }
 
-        this.statusInactive = statusInactive != null ? statusInactive : DEFAULT_STATUS_INACTIVE;
+        this.statusDormant = statusDormant != null ? statusDormant : DEFAULT_STATUS_DORMANT;
         this.statusDefault = statusDefault != null ? statusDefault : DEFAULT_STATUS_EMPTY;
-        this.inactivePeriod = inactivePeriod != null ? inactivePeriod : DEFAULT_INACTIVE_PERIOD;
+        this.dormantPeriod = dormantPeriod != null ? dormantPeriod : DEFAULT_DORMANT_PERIOD;
         this.pollingPeriod = pollingPeriod != null ? pollingPeriod : DEFAULT_POLLING_PERIOD;
         this.epoch = epoch != null ? epoch : Instant.now();
 
-        log.debug("Inactive user settings:\n" +
-                        "\t{} inactive period,\n" +
+        log.debug("Dormant user settings:\n" +
+                        "\t{} dormant period,\n" +
                         "\t{} polling period,\n" +
-                        "\t\"{}\" inactive status,\n" +
+                        "\t\"{}\" dormant status,\n" +
                         "\t\"{}\" default status,\n" +
                         "\t{} epoch",
-                 this.inactivePeriod, this.pollingPeriod,
-                 this.statusInactive, this.statusDefault, this.epoch);
+                 this.dormantPeriod, this.pollingPeriod,
+                 this.statusDormant, this.statusDefault, this.epoch);
     }
 
     private Instant getOrNow(EditablePluginConfig config, String name, boolean update) {
@@ -89,16 +89,16 @@ public class InactiveUserConfig {
         return now;
     }
 
-    public String getInactiveUserStatus() {
-        return statusInactive;
+    public String getDormantUserStatus() {
+        return statusDormant;
     }
 
     public String getDefaultUserStatus() {
         return statusDefault;
     }
 
-    public TemporalAmount getInactivePeriod() {
-        return inactivePeriod;
+    public TemporalAmount getDormantPeriod() {
+        return dormantPeriod;
     }
 
     public TemporalAmount getPollingPeriod() {

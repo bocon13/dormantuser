@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.googlesource.gerrit.plugins.inactiveuser</groupId>
-    <artifactId>inactiveuser</artifactId>
+    <groupId>com.googlesource.gerrit.plugins.dormantuser</groupId>
+    <artifactId>dormantuser</artifactId>
     <version>v2.14.3</version>
     <packaging>jar</packaging>
 
@@ -23,9 +23,9 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Gerrit-PluginName>inactiveuser</Gerrit-PluginName>
-                            <Gerrit-Module>com.googlesource.gerrit.plugins.inactiveuser.Module</Gerrit-Module>
-                            <Gerrit-SshModule>com.googlesource.gerrit.plugins.inactiveuser.SshModule</Gerrit-SshModule>
+                            <Gerrit-PluginName>dormantuser</Gerrit-PluginName>
+                            <Gerrit-Module>com.googlesource.gerrit.plugins.dormantuser.Module</Gerrit-Module>
+                            <Gerrit-SshModule>com.googlesource.gerrit.plugins.dormantuser.SshModule</Gerrit-SshModule>
 
                             <Implementation-Vendor>Gerrit Code Review</Implementation-Vendor>
                             <Implementation-URL>http://code.google.com/p/gerrit/</Implementation-URL>

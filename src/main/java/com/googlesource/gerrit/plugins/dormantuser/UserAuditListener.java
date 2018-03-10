@@ -1,4 +1,4 @@
-package com.googlesource.gerrit.plugins.inactiveuser;
+package com.googlesource.gerrit.plugins.dormantuser;
 
 import com.google.gerrit.audit.AuditEvent;
 import com.google.gerrit.audit.AuditListener;
@@ -14,11 +14,11 @@ import javax.inject.Singleton;
 public class UserAuditListener implements AuditListener {
     private final Logger log = LoggerFactory.getLogger(UserAuditListener.class);
 
-    private final AccountActivity accountActivity;
+    private final DormantUserCache cache;
 
     @Inject
-    UserAuditListener(AccountActivity accountActivity) {
-        this.accountActivity = accountActivity;
+    UserAuditListener(DormantUserCache cache) {
+        this.cache = cache;
     }
 
     @Override
@@ -28,7 +28,7 @@ public class UserAuditListener implements AuditListener {
         if (user != null && user.isIdentifiedUser()) {
             Account.Id id = user.getAccountId();
             log.trace("audit event for user: {}", id);
-            accountActivity.markActive(id);
+            cache.markActive(id);
         }
     }
 }
