@@ -52,11 +52,23 @@ public class DormantUserStore {
         this.identifiedUserFactory = identifiedUserFactory;
     }
 
+    /**
+     * Returns the status of the user.
+     *
+     * @param id account id
+     * @return status
+     */
     public String getStatus(Account.Id id) {
         AccountState state = byIdCache.get(id);
         return state != null ? state.getAccount().getStatus() : null;
     }
 
+    /**
+     * Updates the account status in ReviewDB, then evicts the users from user cache.
+     *
+     * @param id account id
+     * @param newStatus new status for account
+     */
     public void updateStatus(Account.Id id, String newStatus){
         try (ReviewDb db = schemaFactory.open()) {
             Account result = db.accounts().atomicUpdate(
@@ -71,10 +83,22 @@ public class DormantUserStore {
         } catch (OrmException e) {
             log.error("Database update failed", e);
         } catch (IOException e) {
-            log.error("Cache eviction failed", e);
+            if (e.getCause() instanceof InterruptedException) {
+                log.debug("Cache eviction failed due to interrupt", e);
+            } else {
+                log.error("Cache eviction failed", e);
+            }
         }
     }
 
+    /**
+     * Update the last active timestamp in the All-Users git repo.
+     *
+     * @param accountId account id
+     * @param timestamp last update
+     * @return last update timestamp (could be newer than provided parameter);
+     *          if timestamp is null, returns the stored value
+     */
     public Instant updateTimestamp(final Account.Id accountId, final Instant timestamp) {
         return lastWrite.compute(accountId, (id, ts) -> {
             if (ts != null && timestamp != null && ts.compareTo(timestamp) >= 0) {
@@ -107,6 +131,11 @@ public class DormantUserStore {
         });
     }
 
+    /**
+     * Reads the last timestamp for all users from All-Users git repo.
+     *
+     * @return map of account id to last active timestamp
+     */
     public Map<Account.Id, Instant> readUsersFromDisk() {
         Map<Account.Id, Instant> map = Maps.newHashMap();
         try (ReviewDb db = schemaFactory.open()) {

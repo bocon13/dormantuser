@@ -114,8 +114,6 @@ public class DormantUserCacheImpl implements DormantUserCache {
     static class Lifecycle implements LifecycleListener {
         private final Logger log = LoggerFactory.getLogger(Lifecycle.class);
 
-        private static final String QUEUE_NAME = "DormantUser";
-
         private final DormantUserConfig config;
         private final WorkQueue queue;
         private final Runnable sync;
@@ -141,9 +139,10 @@ public class DormantUserCacheImpl implements DormantUserCache {
         public void stop() {
             // Cancel the periodic background task, but don't kill an active task
             if (periodicFuture != null) {
-                log.error("cancel: {}", periodicFuture.cancel(false));
+                periodicFuture.cancel(false);
                 periodicFuture = null;
             }
+            // Synchronize one last time before stopping plugin
             queue.getDefaultQueue().submit(sync);
         }
     }
@@ -162,7 +161,7 @@ public class DormantUserCacheImpl implements DormantUserCache {
             try {
                 cache.sync();
             } catch(Exception e) {
-                log.error("Uncaught exception:", e);
+                log.error("Uncaught sync exception:", e);
             }
         }
 

@@ -56,9 +56,9 @@ public class DormantUserConfig {
             pollingPeriod = config.getDuration(CONFIG_PERIOD_POLLING);
             epoch = getOrNow(config, CONFIG_EPOCH, true);
         } catch (ConfigInvalidException e) {
-            e.printStackTrace(); //FIXME
+            log.error("Invalid plugin configuration", e);
         } catch (IOException e) {
-            e.printStackTrace(); //FIXME
+            log.error("Error reading (or saving) plugin configuration", e);
         }
 
         this.statusDormant = statusDormant != null ? statusDormant : DEFAULT_STATUS_DORMANT;
